@@ -1,0 +1,126 @@
+openapi: 3.0.3
+openapi: 3.0.0
+info:
+  title: GitHub Gist Clone API
+  version: 1.0.0
+paths:
+  /api/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: User registered successfully
+  /api/login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: User logged in successfully
+  /api/logout:
+    post:
+      summary: User logout
+      responses:
+        '200':
+          description: User logged out successfully
+  /api/notes:
+    post:
+      summary: Create a new note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                isPrivate:
+                  type: boolean
+      responses:
+        '200':
+          description: Note created successfully
+  /api/notes/{id}:
+    get:
+      summary: Get a note by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Note retrieved successfully
+  /api/notes/{id}:
+    put:
+      summary: Update a note by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                isPrivate:
+                  type: boolean
+      responses:
+        '200':
+          description: Note updated successfully
+  /api/notes/{id}:
+    delete:
+      summary: Delete a note by ID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Note deleted successfully
+  /api/notes/search:
+    get:
+      summary: Search notes by query
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Notes searched successfully
