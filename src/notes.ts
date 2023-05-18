@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { Router } from "express";
 import mongoose from "mongoose";
+import { Session } from 'express-session';
 
 const router: Router = express.Router();
 
@@ -26,27 +27,42 @@ router.post("/register", (req: Request, res: Response) => {
     password,
   };
 
-  saveUser(newUser);
-
-  res.status(200).json({ message: "User registered successfully" });
+  saveUser(newUser)
+    .then(() => {
+      res.status(200).json({ message: "User registered successfully" });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to register user" });
+    });
 });
 
 router.post("/login", (req: Request, res: Response) => {
   const { username, password } = req.body;
 
-  const authenticated = authenticateUser(username, password);
-
-  if (authenticated) {
-    res.status(200).json({ message: "User logged in successfully" });
-  } else {
-    res.status(401).json({ message: "Invalid username or password" });
-  }
+  authenticateUser(username, password)
+    .then((authenticated) => {
+      if (authenticated) {
+        res.status(200).json({ message: "User logged in successfully" });
+      } else {
+        res.status(401).json({ message: "Invalid username or password" });
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to authenticate user" });
+    });
 });
 
 router.post("/logout", (req: Request, res: Response) => {
-  clearUserSession(req);
-
-  res.status(200).json({ message: "User logged out successfully" });
+  clearUserSession(req as CustomRequest)
+    .then(() => {
+      res.status(200).json({ message: "User logged out successfully" });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to clear user session" });
+    });
 });
 
 router.post("/notes", (req: Request, res: Response) => {
@@ -57,54 +73,79 @@ router.post("/notes", (req: Request, res: Response) => {
     content,
   };
 
-  saveNote(newNote);
-
-  res.status(200).json(newNote);
+  saveNote(newNote)
+    .then(() => {
+      res.status(200).json(newNote);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to save note" });
+    });
 });
 
 router.get("/notes/:id", (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const note = getNoteById(id);
-
-  if (note) {
-    res.status(200).json(note);
-  } else {
-    res.status(404).json({ message: "Note not found" });
-  }
+  getNoteById(id)
+    .then((note) => {
+      if (note) {
+        res.status(200).json(note);
+      } else {
+        res.status(404).json({ message: "Note not found" });
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to retrieve note" });
+    });
 });
 
 router.put("/notes/:id", (req: Request, res: Response) => {
   const { id } = req.params;
   const { title, content } = req.body;
 
-  const updatedNote = updateNoteById(id, title, content);
-
-  if (updatedNote) {
-    res.status(200).json(updatedNote);
-  } else {
-    res.status(404).json({ message: "Note not found" });
-  }
+  updateNoteById(id, title, content)
+    .then((updatedNote) => {
+      if (updatedNote) {
+        res.status(200).json(updatedNote);
+      } else {
+        res.status(404).json({ message: "Note not found" });
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to update note" });
+    });
 });
 
 router.delete("/notes/:id", (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const deletedNote = deleteNoteById(id);
-
-  if (deletedNote) {
-    res.sendStatus(204);
-  } else {
-    res.status(404).json({ message: "Note not found" });
-  }
+  deleteNoteById(id)
+    .then((deletedNote) => {
+      if (deletedNote) {
+        res.sendStatus(204);
+      } else {
+        res.status(404).json({ message: "Note not found" });
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to delete note" });
+    });
 });
 
 router.get("/notes/search", (req: Request, res: Response) => {
-  const { query } = req.query;
+  const query: string | undefined = req.query.query as string;
 
-  const searchResults = searchNotes(query);
-
-  res.status(200).json(searchResults);
+  searchNotes(query)
+    .then((searchResults) => {
+      res.status(200).json(searchResults);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Failed to search notes" });
+    });
 });
 
 export default router;
@@ -125,9 +166,20 @@ const authenticateUser = (username: string, password: string) => {
     });
 };
 
-const clearUserSession = (req: Request) => {
-  req.logout();
-  req.session.destroy();
+interface CustomRequest extends Request {
+  session: any;
+}
+
+const clearUserSession = (req: CustomRequest) => {
+  return new Promise<void>((resolve, reject) => {
+    req.session.destroy((error: any) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
 };
 
 const saveNote = (note: any) => {
