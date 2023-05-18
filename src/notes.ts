@@ -1,7 +1,8 @@
-const express = require("express");
-const router = express.Router();
+import express, { Request, Response } from "express";
+import { Router } from "express";
+import mongoose from "mongoose";
 
-const mongoose = require("mongoose");
+const router: Router = express.Router();
 
 const noteSchema = new mongoose.Schema({
   title: String,
@@ -17,7 +18,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-router.post("/register", (req, res) => {
+router.post("/register", (req: Request, res: Response) => {
   const { username, password } = req.body;
 
   const newUser = {
@@ -30,7 +31,7 @@ router.post("/register", (req, res) => {
   res.status(200).json({ message: "User registered successfully" });
 });
 
-router.post("/login", (req, res) => {
+router.post("/login", (req: Request, res: Response) => {
   const { username, password } = req.body;
 
   const authenticated = authenticateUser(username, password);
@@ -42,13 +43,13 @@ router.post("/login", (req, res) => {
   }
 });
 
-router.post("/logout", (req, res) => {
-  clearUserSession();
+router.post("/logout", (req: Request, res: Response) => {
+  clearUserSession(req);
 
   res.status(200).json({ message: "User logged out successfully" });
 });
 
-router.post("/notes", (req, res) => {
+router.post("/notes", (req: Request, res: Response) => {
   const { title, content } = req.body;
 
   const newNote = {
@@ -61,7 +62,7 @@ router.post("/notes", (req, res) => {
   res.status(200).json(newNote);
 });
 
-router.get("/notes/:id", (req, res) => {
+router.get("/notes/:id", (req: Request, res: Response) => {
   const { id } = req.params;
 
   const note = getNoteById(id);
@@ -73,7 +74,7 @@ router.get("/notes/:id", (req, res) => {
   }
 });
 
-router.put("/notes/:id", (req, res) => {
+router.put("/notes/:id", (req: Request, res: Response) => {
   const { id } = req.params;
   const { title, content } = req.body;
 
@@ -86,7 +87,7 @@ router.put("/notes/:id", (req, res) => {
   }
 });
 
-router.delete("/notes/:id", (req, res) => {
+router.delete("/notes/:id", (req: Request, res: Response) => {
   const { id } = req.params;
 
   const deletedNote = deleteNoteById(id);
@@ -98,7 +99,7 @@ router.delete("/notes/:id", (req, res) => {
   }
 });
 
-router.get("/notes/search", (req, res) => {
+router.get("/notes/search", (req: Request, res: Response) => {
   const { query } = req.query;
 
   const searchResults = searchNotes(query);
@@ -106,14 +107,14 @@ router.get("/notes/search", (req, res) => {
   res.status(200).json(searchResults);
 });
 
-module.exports = router;
+export default router;
 
-const saveUser = (user) => {
+const saveUser = (user: any) => {
   const newUser = new User(user);
   return newUser.save();
 };
 
-const authenticateUser = (username, password) => {
+const authenticateUser = (username: string, password: string) => {
   return User.findOne({ username, password })
     .then((user) => {
       return user !== null;
@@ -124,29 +125,29 @@ const authenticateUser = (username, password) => {
     });
 };
 
-const clearUserSession = (res, req) => {
+const clearUserSession = (req: Request) => {
   req.logout();
   req.session.destroy();
 };
 
-const saveNote = (note) => {
+const saveNote = (note: any) => {
   const newNote = new Note(note);
   return newNote.save();
 };
 
-const getNoteById = (id) => {
+const getNoteById = (id: string) => {
   return Note.findById(id);
 };
 
-const updateNoteById = (id, title, content) => {
+const updateNoteById = (id: string, title: string, content: string) => {
   return Note.findByIdAndUpdate(id, { title, content }, { new: true });
 };
 
-const deleteNoteById = (id) => {
+const deleteNoteById = (id: string) => {
   return Note.findByIdAndDelete(id);
 };
 
-const searchNotes = (query) => {
+const searchNotes = (query: string) => {
   const regexQuery = { $regex: new RegExp(query, "i") }; // Case-insensitive search
   return Note.find({ $or: [{ title: regexQuery }, { content: regexQuery }] });
 };
